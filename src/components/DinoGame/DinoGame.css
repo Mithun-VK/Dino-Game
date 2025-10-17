@@ -1,0 +1,524 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+}
+
+.game-container {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transition: all 0.5s ease;
+}
+
+.game-container.night {
+  background: rgba(30, 30, 40, 0.95);
+  color: #fff;
+}
+
+.game-container h1 {
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 24px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.game-container.night h1 {
+  color: #fff;
+}
+
+.score-container {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 15px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.score,
+.high-score,
+.mode-indicator {
+  font-size: 16px;
+  font-weight: bold;
+  color: #535353;
+  font-family: 'Courier New', monospace;
+}
+
+.night .score,
+.night .high-score,
+.night .mode-indicator {
+  color: #d0d0d0;
+}
+
+.high-score {
+  color: #ff6b6b;
+}
+
+.mode-indicator {
+  color: #3498db;
+  font-size: 14px;
+}
+
+.game {
+  width: 600px;
+  height: 200px;
+  border: 3px solid #333;
+  margin: auto;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #87ceeb 0%, #f0f0f0 70%);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: background 0.5s ease;
+}
+
+.game.night-mode {
+  background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 70%);
+  border-color: #d0d0d0;
+}
+
+/* FIXED: Dino styling - Now properly on ground */
+#dino {
+  width: 44px;
+  height: 47px;
+  position: absolute;
+  bottom: 0px; /* FIXED: Changed from 50px to 0px */
+  left: 50px;
+  transition: all 0.1s;
+}
+
+#dino::before {
+  content: "";
+  position: absolute;
+  width: 44px;
+  height: 47px;
+  background: linear-gradient(135deg, #2d5016 0%, #3a6e1f 100%);
+  border-radius: 5px 5px 0 0;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.night-mode #dino::before {
+  background: linear-gradient(135deg, #4a7c28 0%, #5a9c35 100%);
+}
+
+/* Dino head */
+#dino::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #2d5016;
+  border-radius: 50%;
+  top: -12px;
+  right: 2px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.night-mode #dino::after {
+  background: #4a7c28;
+}
+
+/* Dino eye */
+.dino-eye {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  top: 5px;
+  right: 8px;
+  z-index: 2;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Dino legs for running animation */
+.dino-leg {
+  position: absolute;
+  width: 6px;
+  height: 12px;
+  background: #2d5016;
+  bottom: -12px;
+}
+
+.night-mode .dino-leg {
+  background: #4a7c28;
+}
+
+.dino-leg-left {
+  left: 10px;
+}
+
+.dino-leg-right {
+  left: 25px;
+}
+
+/* Running animation */
+.running .dino-leg-left {
+  animation: legMove 0.3s infinite;
+}
+
+.running .dino-leg-right {
+  animation: legMove 0.3s infinite;
+  animation-delay: 0.15s;
+}
+
+@keyframes legMove {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(-10deg);
+  }
+}
+
+/* FIXED: Jump animation - Updated for ground position */
+.jump {
+  animation: jump 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes jump {
+  0% {
+    bottom: 0px; /* FIXED: Changed from 50px */
+  }
+  40% {
+    bottom: 100px; /* FIXED: Adjusted jump height */
+  }
+  50% {
+    bottom: 100px;
+  }
+  100% {
+    bottom: 0px; /* FIXED: Changed from 50px */
+  }
+}
+
+/* FIXED: Duck animation - Updated for ground position */
+.duck {
+  animation: duck 0.2s forwards;
+}
+
+@keyframes duck {
+  to {
+    height: 30px;
+    bottom: 0px; /* FIXED: Changed from 50px */
+  }
+}
+
+.duck::before {
+  border-radius: 5px !important;
+  height: 30px !important;
+}
+
+.duck::after {
+  top: 5px !important;
+}
+
+/* Removed old cactus CSS as we're using Canvas now */
+
+/* FIXED: Ground line - Now at bottom */
+.ground {
+  position: absolute;
+  bottom: 0px; /* FIXED: Changed from 48px to 0px */
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #535353;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.night-mode .ground {
+  background: #d0d0d0;
+}
+
+/* Enhanced cloud animations */
+.cloud {
+  position: absolute;
+  width: 60px;
+  height: 25px;
+  background: white;
+  border-radius: 50px;
+  top: 30px;
+  opacity: 0.7;
+  filter: blur(0.5px);
+}
+
+.cloud::before {
+  content: "";
+  position: absolute;
+  width: 35px;
+  height: 25px;
+  background: white;
+  border-radius: 50%;
+  top: -15px;
+  left: 10px;
+}
+
+.cloud1 {
+  left: 100px;
+  animation: moveCloud 15s infinite linear;
+}
+
+.cloud2 {
+  left: 400px;
+  animation: moveCloud 20s infinite linear;
+  animation-delay: -5s;
+}
+
+@keyframes moveCloud {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-700px);
+  }
+}
+
+/* Start screen */
+.start-screen {
+  margin-top: 20px;
+}
+
+.instructions {
+  color: #333;
+  font-size: 14px;
+  margin: 10px 0;
+  animation: blink 1.5s infinite;
+}
+
+.night .instructions {
+  color: #fff;
+}
+
+.instructions-secondary {
+  color: #666;
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+.night .instructions-secondary {
+  color: #aaa;
+}
+
+@keyframes blink {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.3;
+  }
+}
+
+/* Game over screen */
+.game-over-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.98);
+  padding: 30px 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  z-index: 10;
+  animation: slideIn 0.3s ease-out;
+  backdrop-filter: blur(5px);
+}
+
+.night .game-over-screen {
+  background: rgba(30, 30, 40, 0.98);
+  color: #fff;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translate(-50%, -60%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+}
+
+.game-over-screen h2 {
+  color: #ff4757;
+  font-size: 24px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.final-score {
+  font-size: 18px;
+  color: #333;
+  margin: 15px 0;
+  font-weight: bold;
+}
+
+.night .final-score {
+  color: #fff;
+}
+
+.new-record {
+  color: #ffa502;
+  font-size: 14px;
+  margin: 10px 0;
+  animation: pulse 0.8s infinite;
+  font-weight: bold;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.restart-button {
+  padding: 12px 30px;
+  font-size: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  margin: 15px 0 10px 0;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.restart-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.restart-button:active {
+  transform: translateY(0);
+}
+
+.instructions-small {
+  font-size: 10px;
+  color: #999;
+  margin-top: 10px;
+}
+
+.controls-info,
+.features-list {
+  margin-top: 15px;
+  color: #666;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.night .controls-info,
+.night .features-list {
+  color: #aaa;
+}
+
+.features-list {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.night .features-list {
+  border-top-color: #444;
+}
+
+/* Canvas positioning */
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Responsive design */
+@media (max-width: 700px) {
+  .game {
+    width: 90vw;
+    max-width: 500px;
+  }
+  
+  .game-container {
+    padding: 20px;
+  }
+  
+  .game-container h1 {
+    font-size: 18px;
+  }
+  
+  .score, .high-score, .mode-indicator {
+    font-size: 12px;
+  }
+  
+  .score-container {
+    gap: 10px;
+  }
+  
+  canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .controls-info,
+  .features-list {
+    font-size: 9px;
+  }
+  
+  .restart-button {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .game-container h1 {
+    font-size: 16px;
+  }
+  
+  .score, .high-score {
+    font-size: 11px;
+  }
+  
+  .mode-indicator {
+    font-size: 10px;
+  }
+}
+
+/* Performance optimizations */
+@media (prefers-reduced-motion: reduce) {
+  .jump,
+  .duck,
+  .running .dino-leg-left,
+  .running .dino-leg-right,
+  .cloud1,
+  .cloud2,
+  .instructions {
+    animation: none !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+  }
+  
+  .game-container {
+    box-shadow: none;
+  }
+}
