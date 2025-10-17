@@ -18,7 +18,7 @@ function DinoGame() {
   const [isDayMode, setIsDayMode] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
   
-  const gameLoopRef = useRef();
+  // REMOVED: const gameLoopRef = useRef(); // This was unused
   const scoreIntervalRef = useRef();
   const obstaclesRef = useRef([]);
   const cloudsRef = useRef([]);
@@ -33,35 +33,76 @@ function DinoGame() {
     { type: 'pterodactyl-low', width: 46, height: 40, canDuck: true, flying: true, y: 20 }
   ];
 
-  // Play sound effect (simulated with Audio API)
-  const playSound = (type) => {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    if (type === 'jump') {
-      oscillator.frequency.value = 500;
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.1);
-    } else if (type === 'score') {
-      oscillator.frequency.value = 800;
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.05);
-    } else if (type === 'gameOver') {
-      oscillator.frequency.value = 200;
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
+  // Play sound effect
+  const playSound = useCallback((type) => {
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      if (type === 'jump') {
+        oscillator.frequency.value = 500;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      } else if (type === 'score') {
+        oscillator.frequency.value = 800;
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.05);
+      } else if (type === 'gameOver') {
+        oscillator.frequency.value = 200;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
+      }
+    } catch (error) {
+      // Silently handle audio context errors
+      console.log('Audio not supported');
     }
-  };
+  }, []);
+
+  // Generate obstacle - MOVED outside useEffect
+  const generateObstacle = useCallback(() => {
+    const lastObstacle = obstaclesRef.current[obstaclesRef.current.length - 1];
+    const minGap = 200 + gameSpeed * 10;
+    
+    if (!lastObstacle || lastObstacle.x < 600 - minGap) {
+      const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+      obstaclesRef.current.push({
+        ...obstacleType,
+        x: 600,
+        id: Date.now()
+      });
+    }
+  }, [gameSpeed, obstacleTypes]);
+
+  // Initialize clouds
+  const initializeClouds = useCallback(() => {
+    return Array.from({ length: 5 }, (_, i) => ({
+      x: Math.random() * 600,
+      y: 20 + Math.random() * 40,
+      speed: 0.5 + Math.random() * 0.5
+    }));
+  }, []);
+
+  // Start game - MOVED before useEffect
+  const startGame = useCallback(() => {
+    setGameOver(false);
+    setIsPlaying(true);
+    setScore(0);
+    setGameSpeed(6);
+    setIsRunning(true);
+    obstaclesRef.current = [];
+    cloudsRef.current = initializeClouds();
+    frameCountRef.current = 0;
+  }, [initializeClouds]);
 
   // Jump function
   const jump = useCallback(() => {
@@ -80,7 +121,7 @@ function DinoGame() {
         }
       }, 500);
     }
-  }, [gameOver, isPlaying]);
+  }, [gameOver, isPlaying, playSound]);
 
   // Duck function
   const duck = useCallback(() => {
@@ -104,20 +145,8 @@ function DinoGame() {
     }
   }, [isPlaying]);
 
-  // Start game
-  const startGame = () => {
-    setGameOver(false);
-    setIsPlaying(true);
-    setScore(0);
-    setGameSpeed(6);
-    setIsRunning(true);
-    obstaclesRef.current = [];
-    cloudsRef.current = initializeClouds();
-    frameCountRef.current = 0;
-  };
-
   // Reset game
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGameOver(false);
     setIsPlaying(false);
     setScore(0);
@@ -125,33 +154,9 @@ function DinoGame() {
     setIsRunning(false);
     obstaclesRef.current = [];
     frameCountRef.current = 0;
-  };
+  }, []);
 
-  // Initialize clouds
-  const initializeClouds = () => {
-    return Array.from({ length: 5 }, (_, i) => ({
-      x: Math.random() * 600,
-      y: 20 + Math.random() * 40,
-      speed: 0.5 + Math.random() * 0.5
-    }));
-  };
-
-  // Generate obstacle
-  const generateObstacle = () => {
-    const lastObstacle = obstaclesRef.current[obstaclesRef.current.length - 1];
-    const minGap = 200 + gameSpeed * 10;
-    
-    if (!lastObstacle || lastObstacle.x < 600 - minGap) {
-      const obstacleType = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
-      obstaclesRef.current.push({
-        ...obstacleType,
-        x: 600,
-        id: Date.now()
-      });
-    }
-  };
-
-  // Main game loop using Canvas
+  // Main game loop
   useEffect(() => {
     if (!isPlaying || gameOver) return;
 
@@ -160,18 +165,13 @@ function DinoGame() {
     let animationFrameId;
 
     const gameLoop = () => {
-      // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Update frame count
       frameCountRef.current++;
 
-      // Generate obstacles
       if (frameCountRef.current % 90 === 0) {
         generateObstacle();
       }
 
-      // Update and draw clouds
       cloudsRef.current.forEach((cloud) => {
         cloud.x -= cloud.speed;
         if (cloud.x < -60) cloud.x = 600;
@@ -184,30 +184,20 @@ function DinoGame() {
         ctx.fill();
       });
 
-      // Get dino position
       const dinoRect = dinoRef.current?.getBoundingClientRect();
       const gameRect = gameRef.current?.getBoundingClientRect();
 
-      // Update and draw obstacles
       obstaclesRef.current = obstaclesRef.current.filter((obstacle) => {
         obstacle.x -= gameSpeed;
-
-        // Remove off-screen obstacles
         if (obstacle.x < -50) return false;
 
-        // Draw obstacle
         if (obstacle.flying) {
-          // Pterodactyl
           ctx.fillStyle = isDayMode ? '#535353' : '#d0d0d0';
           const flap = Math.floor(frameCountRef.current / 10) % 2;
           ctx.save();
           ctx.translate(obstacle.x, 200 - obstacle.height - obstacle.y);
-          
-          // Body
           ctx.fillRect(10, 15, 30, 10);
-          // Head
           ctx.fillRect(35, 10, 15, 15);
-          // Wings
           if (flap === 0) {
             ctx.fillRect(0, 10, 15, 5);
             ctx.fillRect(0, 0, 20, 5);
@@ -217,18 +207,15 @@ function DinoGame() {
           }
           ctx.restore();
         } else {
-          // Cactus
           ctx.fillStyle = isDayMode ? '#1b5e20' : '#2e7d32';
           ctx.fillRect(obstacle.x, 200 - obstacle.height, obstacle.width, obstacle.height);
           
-          // Cactus details
           if (obstacle.type === 'cactus-large' || obstacle.type === 'cactus-double') {
             ctx.fillRect(obstacle.x - 5, 200 - obstacle.height + 10, 8, 15);
             ctx.fillRect(obstacle.x + obstacle.width - 3, 200 - obstacle.height + 15, 8, 15);
           }
         }
 
-        // Collision detection
         if (dinoRect && gameRect) {
           const dinoX = dinoRect.left - gameRect.left;
           const dinoY = dinoRect.top - gameRect.top;
@@ -271,7 +258,7 @@ function DinoGame() {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [isPlaying, gameOver, gameSpeed, score, highScore, isDayMode]);
+  }, [isPlaying, gameOver, gameSpeed, score, highScore, isDayMode, generateObstacle, playSound]); // FIXED: Added generateObstacle
 
   // Score increment
   useEffect(() => {
@@ -293,7 +280,7 @@ function DinoGame() {
     return () => {
       if (scoreIntervalRef.current) clearInterval(scoreIntervalRef.current);
     };
-  }, [isPlaying, gameOver]);
+  }, [isPlaying, gameOver, playSound]);
 
   // Progressive difficulty
   useEffect(() => {
@@ -344,12 +331,12 @@ function DinoGame() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("keyup", handleKeyUp);
     };
-  }, [jump, duck, stopDuck, isPlaying, gameOver]);
+  }, [jump, duck, stopDuck, isPlaying, gameOver, startGame, resetGame]); // FIXED: Added startGame
 
   // Initialize clouds
   useEffect(() => {
     cloudsRef.current = initializeClouds();
-  }, []);
+  }, [initializeClouds]);
 
   return (
     <div className={`game-container ${isDayMode ? 'day' : 'night'}`}>
