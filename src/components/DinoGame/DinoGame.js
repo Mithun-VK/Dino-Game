@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback , useMemo} from "react";
 import "./DinoGame.css";
 
 function DinoGame() {
@@ -26,13 +25,13 @@ function DinoGame() {
   const frameCountRef = useRef(0);
 
   // Obstacle types
-  const obstacleTypes = [
+  const obstacleTypes = useMemo(() => [
     { type: 'cactus-small', width: 17, height: 35, canDuck: false },
     { type: 'cactus-large', width: 25, height: 50, canDuck: false },
     { type: 'cactus-double', width: 35, height: 50, canDuck: false },
     { type: 'pterodactyl-high', width: 46, height: 40, canDuck: false, flying: true, y: 50 },
     { type: 'pterodactyl-low', width: 46, height: 40, canDuck: true, flying: true, y: 20 }
-  ];
+  ], []);
 
   // Play sound effect
   const playSound = useCallback((type) => {
